@@ -1,0 +1,12 @@
+[Unit]
+Description=Kalshi Orderbook Ingestor
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/orderbook --tickers-file /data/tickers.txt
+Restart=always
+User=ubuntu
+EnvironmentFile=/etc/orderbook.env
+
+[Install]
+WantedBy=multi-user.target
