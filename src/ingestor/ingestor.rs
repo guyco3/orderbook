@@ -15,7 +15,7 @@ pub async fn run(
     tickers: Vec<String>, 
     signer: Arc<KalshiSigner>, 
     debug: bool
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let (key_id, sig, ts) = signer.get_auth_headers();
     let mut req = url::Url::parse("wss://api.elections.kalshi.com/trade-api/ws/v2")?.into_client_request()?;
     

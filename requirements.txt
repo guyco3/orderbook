@@ -1,0 +1,13 @@
+# --- Build Tools ---
+# Maturin is the glue that compiles your Rust into a Python module
+maturin>=1.0,<2.0
+
+# --- Analysis Tools ---
+# DuckDB for high-speed SQL queries on your .jsonl logs
+duckdb>=1.0.0
+# Pandas allows you to turn DuckDB results into dataframes for analysis
+pandas>=2.0.0
+
+# --- Optional Utilities ---
+# If you want to load .env files directly in your Python analyzer scripts
+python-dotenv>=1.0.0

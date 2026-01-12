@@ -3,7 +3,13 @@ name = "orderbook"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+# The name MUST match the #[pymodule] name in lib.rs
+name = "orderbook_rs"
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
+
 # Concurrency
 tokio = { version = "1", features = ["full"] }
 crossbeam-channel = "0.5"
@@ -29,6 +35,8 @@ atty = "0.2.14"
 
 duckdb = { version = "1.1", features = ["chrono"] }
 ordered-float = "4.2" # Used for sorting price levels in BTreeMap
+thiserror = "2.0.17"
+pyo3 = { version = "0.23", features = ["extension-module", "abi3-py37"] }
 
 [profile.release]
 opt-level = 3

@@ -1,11 +1,7 @@
 use clap::Parser;
-use crossbeam_channel::bounded;
-use std::{env, fs::read_to_string, sync::Arc};
-use tokio::task::JoinSet;
+use std::{env, fs::read_to_string};
 use std::io::{self, Read};
-
-// IMPORT FROM THE LIBRARY ONLY
-use orderbook::ingestor::{auth::KalshiSigner, run_ingestor, run_logger};
+use orderbook_rs::{Recorder, Result};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -16,54 +12,36 @@ struct Args {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
     let args = Args::parse();
     
-    let tickers_raw: String = if let Some(path) = args.tickers_file {
-        read_to_string(&path).expect(&format!("❌ {} not found.", path))
+    let tickers_raw = if let Some(path) = args.tickers_file {
+        read_to_string(path).expect("❌ File not found")
     } else {
-        if !atty::is(atty::Stream::Stdin) {
-            let mut buffer = String::new();
-            io::stdin().read_to_string(&mut buffer)?;
-            buffer
-        } else {
-            eprintln!("❌ Error: No tickers provided. Pipe a file or use --tickers-file");
-            std::process::exit(1);
-        }
+        let mut buffer = String::new();
+        io::stdin().read_to_string(&mut buffer)?;
+        buffer
     };
 
     let tickers: Vec<String> = tickers_raw.lines()
         .map(|l| l.trim().to_string())
-        .filter(|l| !l.is_empty())
-        .collect();
+        .filter(|l| !l.is_empty()).collect();
 
-    let (log_tx, log_rx) = bounded(250_000);
-    
-    // Use the alias directly
-    std::thread::spawn(move || run_logger(log_rx));
+    let key_id = env::var("KALSHI_KEY_ID")?;
+    let key_path = env::var("KALSHI_PRIVATE_KEY_PATH").unwrap_or("kalshi_key.pem".into());
 
-    let api_key_id = env::var("KALSHI_KEY_ID").expect("KALSHI_KEY_ID not set");
-    let key_path = env::var("KALSHI_PRIVATE_KEY_PATH").unwrap_or_else(|_| "kalshi_key.pem".to_string());
-    
-    println!("🗝️  Using key: {}", key_path);
-    let signer = Arc::new(KalshiSigner::new(&key_path, api_key_id));
-    
-    let mut set = JoinSet::new();
-    for chunk in tickers.chunks(20) {
-        let tx = log_tx.clone();
-        let sig = Arc::clone(&signer);
-        let batch = chunk.to_vec();
-        let debug = args.debug;
-        set.spawn(async move {
-            // Use the alias directly
-            if let Err(e) = run_ingestor(tx, batch, sig, debug).await {
-                eprintln!("❌ Ingestor Task failed: {}", e);
-            }
-        });
-    }
+    let handle = Recorder::builder()
+        .with_auth(key_id, key_path)
+        .with_tickers(tickers)
+        .debug(args.debug)
+        .build()
+        .start();
 
-    println!("🚀 orderbook online: {} markets. Debug: {}", tickers.len(), args.debug);
-    while let Some(_) = set.join_next().await {}
+    println!("🚀 Recorder online.");
+
+    // THE FIX: Explicitly map the error to the non-thread-safe version for main
+    handle.await??;
+    
     Ok(())
 }

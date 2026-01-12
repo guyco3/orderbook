@@ -1,0 +1,18 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "orderbook"
+version = "0.1.0"
+requires-python = ">=3.7"
+dependencies = [
+    "duckdb>=1.0.0",
+    "pandas>=2.0.0"
+]
+
+[tool.maturin]
+# This points to your 'python/' directory
+python-source = "python"
+# This tells maturin that 'orderbook_rs' is a submodule of 'orderbook'
+module-name = "orderbook.orderbook_rs"
