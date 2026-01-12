@@ -24,3 +24,5 @@ target
 *pem
 *.env*
 *.pem*
+
+logs
