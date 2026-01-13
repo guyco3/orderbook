@@ -102,7 +102,7 @@ cargo test
 | `src/`   | Rust Core: WebSocket client, RSA Auth, Sequence Gap Detection. |
 | `python/`| Python SDK: Analyzer class, DuckDB integration, SQL Views. |
 | `tests/` | Integrity: pytest and mock log generation.         |
-| `examples/` | Research: Scripts for heatmaps, velocity, and fill estimation. |
+| `examples/` | guess whats in here 0: |
 
 ## 📜 License
 
