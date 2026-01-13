@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 pub mod auth;
-pub mod publisher;
 pub mod logger;
+pub mod publisher;
 
 pub struct Recorder {
     tickers: Vec<String>,
@@ -29,7 +29,6 @@ impl Default for RecorderBuilder {
 }
 
 impl RecorderBuilder {
-
     pub fn new() -> Self {
         Self {
             tickers: vec![],
