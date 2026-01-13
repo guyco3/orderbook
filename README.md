@@ -1,106 +1,109 @@
 # Kalshi Orderbook SDK 🦀🐍
 
-[![PyPI version](https://badge.fury.io/py/kalshi-orderbook.svg)](https://pypi.org/project/kalshi-orderbook/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-A high-performance market data engine for Kalshi. It uses a **Rust core** for low-latency WebSocket ingestion and **DuckDB** for lightning-fast microstructure analysis.
-
-![Market Liquidity Heatmap](https://raw.githubusercontent.com/guyco3/orderbook/main/liquidity_heatmap.png)
+A high-performance market microstructure engine for Kalshi. This SDK combines a Zero-Copy Rust Ingestor for sub-millisecond data capture with a Vectorized Python Analyzer powered by DuckDB for stateful L2 order book reconstruction.
 
 ## 🚀 Key Features
-- **Zero-Latency Ingestion:** Rust-based async recorder with vectorized SSD writes.
-- **DuckDB Integration:** Query gigabytes of JSONL logs directly with SQL—no database setup required.
-- **Python-Native:** Install via `pip` and get the performance of Rust with the ease of Python.
-- **Microstructure Suite:** Reconstruct L2 order books and visualize market "heatmaps" out of the box.
+- **Event-Sourced Ingestion:** Rust-based async recorder that preserves message sequence integrity and handles WebSocket gaps automatically.
+- **Stateful L2 Reconstruction:** Don't just look at snapshots. The SDK replays orderbook_delta events over orderbook_snapshot anchors using DuckDB window functions.
+- **Vectorized SQL Engine:** Query gigabytes of JSONL logs using standard SQL. Perform complex time-series analysis without loading entire files into Python memory.
+- **Hybrid Architecture:** Get the performance of Rust's concurrency with the ease of a Pythonic research API.
+
+## 🏗️ Architecture
+- **Ingestor (Rust):** Connects to Kalshi's V2 WebSocket, signs requests using RSA-SHA256, and pipes raw messages into high-speed BufWriter channels.
+- **Storage (JSONL):** Efficient, ticker-partitioned logs.
+- **Analyzer (Python/DuckDB):** Performs the "heavy lifting" of stateful reconstruction, mapping deltas to the last known snapshot to provide a "Ground Truth" view of the book at every sequence ID.
 
 ## 📦 Installation
 
-```bash
-pip install kalshi-orderbook
-```
-
-Note: Requires Python 3.7+ and a working Rust toolchain for manual builds.
-
-## 🛠️ Quick Start
-
-### 1. Record Live Data (CLI)
-
-You can use the built-in Rust ingestor to record specific tickers:
+### From Source (Recommended for Dev)
 
 ```bash
-# Provide a file with tickers
-cargo run --release -- --tickers-file tickers.txt
+git clone https://github.com/guyco3/orderbook
+cd orderbook
+# Install in editable mode to link local Python changes
+pip install -e .
 ```
 
-### 2. High-Res Analysis (Python)
+## 🛠️ Usage Guide
 
-Use the SDK to analyze your logs with microsecond precision.
+### 1. The Recorder (Rust)
+
+The recorder is optimized for long-running capture sessions. It handles sequence gap detection—if a message is missed, it automatically unsubscribes and resubscribes to catch a fresh snapshot.
+
+```bash
+# Provide a tickers.txt file and your PEM key path
+cargo run -- --tickers-file tickers.txt --key-path kalshi_key.pem --api-key-id <YOUR_ID>
+```
+
+### 2. The Analyzer (Python)
+
+The Analyzer turns raw logs into stateful tables.
 
 ```python
-import orderbook
+from orderbook.analyzer import Analyzer
 
-# Load logs from the local directory
-ana = orderbook.Analyzer(log_dir="./logs")
+# 1. Initialize and load all ticker logs in the directory
+ana = Analyzer(log_dir="./logs")
 ana.load_all()
 
-# Run a SQL query across your JSON data
-df = ana.query("SELECT * FROM KXBTC_26JAN_B90750 WHERE type = 'ticker'")
+# 2. Reconstruct the 93-cent "Magnet" wall
+# The SDK automatically creates a view: orderbook_{ticker}
+market = "KXFEDDECISION_26JAN_H0"
+query = f"""
+    SELECT seq, price, current_qty 
+    FROM orderbook_{market} 
+    WHERE price = 93 AND side = 'yes'
+    ORDER BY seq DESC LIMIT 10
+"""
+df = ana.query(query)
 print(df)
 ```
 
-## 📊 Market Microstructure
+## 🔬 Microstructure Insights
 
-The SDK allows you to visualize the "hidden" state of the market, including liquidity walls and bot activity.
+### Detecting "Liquidity Gravity"
 
-- **Velocity Analysis:** Detect micro-bursts of market activity.
-- **Heatmap Reconstruction:** Replay the order book to see where depth is concentrating.
+The SDK allows you to calculate Micro-Price and Churn Ratios. This helps distinguish between real institutional floors (Stable Walls) and bot-driven "Spoofing" (Flickering Walls).
+
+```python
+# Calculate the 'Cost to Sweep' 50,000 contracts
+avg_price = ana.estimate_fill(market, side='yes', size=50000)
+print(f"Average Fill Price for 50k contracts: {avg_price}c")
+```
+
+## 🧪 Testing
+
+The project uses a two-tier testing suite to ensure data integrity.
+
+### Python Logic Tests (pytest)
+
+Verifies the SQL window functions correctly reconstruct the order book state.
+
+```bash
+# Standard test run
+pytest tests/test_analyzer.py
+
+# Run with stdout to see DuckDB catalog state
+pytest -s tests/test_analyzer.py
+```
+
+### Rust Core Tests (cargo test)
+
+Verifies RSA signature generation, WebSocket message parsing, and thread-safe logging.
+
+```bash
+cargo test
+```
 
 ## 🏗️ Repository Structure
 
-```
-.
-├── src/                # High-performance Rust Engine
-├── python/             # Python SDK Wrappers
-├── examples/           # Ready-to-run analysis scripts
-├── logs/               # Local JSONL data lake
-├── Cargo.toml          # Rust dependencies
-└── pyproject.toml      # Python metadata (Maturin)
-```
-
-## 🛠️ Local Development & Building
-
-If you want to modify the Rust engine or build the SDK from source, follow these steps:
-
-### Prerequisites
-- **Rust:** [Install via rustup](https://rustup.rs/)
-- **Python:** 3.7+
-- **Maturin:** `pip install maturin`
-
-### Build Instructions
-
-1. **Clone the repo:**
-   ```bash
-   git clone https://github.com/guyco3/orderbook
-   cd orderbook
-   ```
-
-2. **Setup virtual environment:**
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate
-   ```
-
-3. **Compile and Install in-place:** This command compiles the Rust code and installs the package into your current venv.
-   ```bash
-   maturin develop --release
-   ```
-
-Now you can run the Python examples using your locally compiled Rust binary!
-
-## 🤝 Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for our development standards and how to submit pull requests.
+| Folder   | Responsibility                                      |
+|----------|----------------------------------------------------|
+| `src/`   | Rust Core: WebSocket client, RSA Auth, Sequence Gap Detection. |
+| `python/`| Python SDK: Analyzer class, DuckDB integration, SQL Views. |
+| `tests/` | Integrity: pytest and mock log generation.         |
+| `examples/` | Research: Scripts for heatmaps, velocity, and fill estimation. |
 
 ## 📜 License
 
-Licensed under the MIT License.
+MIT License. See LICENSE for details.
