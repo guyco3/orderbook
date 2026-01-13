@@ -244,3 +244,26 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+dist
+
+# Rust
+target/
+Cargo.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+dist/
+*.egg-info/
+
+# Secret Keys (IMPORTANT)
+*.pem
+.env
+
+# Data & Logs
+logs/
+*.jsonl
+*.png

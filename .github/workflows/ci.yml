@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy, rustfmt
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install maturin
+      run: pip install maturin[zig]
+
+    - name: Rust Formatting Check
+      run: cargo fmt --all -- --check
+
+    - name: Rust Linting (Clippy)
+      run: cargo clippy -- -D warnings
+
+    - name: Build Python Wheel
+      run: maturin build --release
