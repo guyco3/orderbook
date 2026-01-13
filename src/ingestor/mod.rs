@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 pub mod auth;
-pub mod ingestor;
+pub mod publisher;
 pub mod logger;
 
 pub struct Recorder {
@@ -22,7 +22,14 @@ pub struct RecorderBuilder {
     debug: bool,
 }
 
+impl Default for RecorderBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RecorderBuilder {
+
     pub fn new() -> Self {
         Self {
             tickers: vec![],
@@ -90,9 +97,9 @@ impl Recorder {
                 let batch = chunk.to_vec();
                 set.spawn(async move {
                     // Map generic errors into our custom OrderbookError
-                    ingestor::run(tx, batch, sig, debug)
+                    publisher::run(tx, batch, sig, debug)
                         .await
-                        .map_err(|e| crate::error::OrderbookError::Internal(e.to_string()))
+                        .map_err(|e| crate::error::OrderbookError::Internal(e.to_string().into()))
                 });
             }
 

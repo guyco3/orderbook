@@ -1,5 +1,4 @@
-// Fix 1: Use 'super' because auth.rs is a sibling in the ingestor folder
-use super::auth::KalshiSigner;
+use crate::ingestor::auth::KalshiSigner;
 
 use crossbeam_channel::Sender;
 use futures_util::{SinkExt, StreamExt};
