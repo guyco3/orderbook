@@ -26,13 +26,25 @@ pip install -e .
 
 ## 🛠️ Usage Guide
 
-### 1. The Recorder (Rust)
+### 1. The Recorder (Python client)
 
 The recorder is optimized for long-running capture sessions. It handles sequence gap detection—if a message is missed, it automatically unsubscribes and resubscribes to catch a fresh snapshot.
 
-```bash
-# Provide a tickers.txt file and your PEM key path
-cargo run -- --tickers-file tickers.txt --key-path kalshi_key.pem --api-key-id <YOUR_ID>
+```python
+from orderbook.orderbook_rs import PyRecorder
+
+rec = orderbook.PyRecorder(
+    tickers=[
+        "KXBTC2026200-27JAN01-200000",
+        "KXFEDDECISION-26JAN-H0",
+        ],
+    api_key=key_id,
+    key_path=key_path,
+    log_dir="./logs",
+    debug=True
+)
+
+rec.start()
 ```
 
 ### 2. The Analyzer (Python)
