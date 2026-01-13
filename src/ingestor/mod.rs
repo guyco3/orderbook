@@ -1,7 +1,7 @@
 use crate::error::Result;
+use crate::ingestor::auth::KalshiSigner;
 use std::path::PathBuf;
 use std::sync::Arc;
-use crate::ingestor::auth::KalshiSigner;
 
 pub mod auth;
 pub mod ingestor;
@@ -57,7 +57,7 @@ impl RecorderBuilder {
     pub fn build(self) -> Recorder {
         let key_id = self.api_key_id.expect("API Key ID missing");
         let key_path = self.private_key_path.expect("Private key path missing");
-        
+
         Recorder {
             tickers: self.tickers,
             log_dir: self.log_dir,
@@ -68,7 +68,9 @@ impl RecorderBuilder {
 }
 
 impl Recorder {
-    pub fn builder() -> RecorderBuilder { RecorderBuilder::new() }
+    pub fn builder() -> RecorderBuilder {
+        RecorderBuilder::new()
+    }
 
     pub fn start(&self) -> tokio::task::JoinHandle<Result<()>> {
         let (log_tx, log_rx) = crossbeam_channel::bounded(250_000);
@@ -88,14 +90,15 @@ impl Recorder {
                 let batch = chunk.to_vec();
                 set.spawn(async move {
                     // Map generic errors into our custom OrderbookError
-                    ingestor::run(tx, batch, sig, debug).await
+                    ingestor::run(tx, batch, sig, debug)
+                        .await
                         .map_err(|e| crate::error::OrderbookError::Internal(e.to_string()))
                 });
             }
-            
+
             while let Some(res) = set.join_next().await {
                 // Now these ? work perfectly because the types match
-                res??; 
+                res??;
             }
             Ok(())
         })

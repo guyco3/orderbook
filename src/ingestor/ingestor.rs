@@ -1,27 +1,30 @@
 // Fix 1: Use 'super' because auth.rs is a sibling in the ingestor folder
-use super::auth::KalshiSigner; 
+use super::auth::KalshiSigner;
 
 use crossbeam_channel::Sender;
 use futures_util::{SinkExt, StreamExt};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::{collections::HashMap, sync::Arc};
-use tokio_tungstenite::{connect_async, tungstenite::protocol::Message, tungstenite::client::IntoClientRequest};
+use tokio_tungstenite::{
+    connect_async, tungstenite::client::IntoClientRequest, tungstenite::protocol::Message,
+};
 
 // Fix 2: Explicitly import HeaderValue from the correct sub-crate
 use tokio_tungstenite::tungstenite::http::HeaderValue;
 
 pub async fn run(
-    log_tx: Sender<Value>, 
-    tickers: Vec<String>, 
-    signer: Arc<KalshiSigner>, 
-    debug: bool
+    log_tx: Sender<Value>,
+    tickers: Vec<String>,
+    signer: Arc<KalshiSigner>,
+    debug: bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let (key_id, sig, ts) = signer.get_auth_headers();
-    let mut req = url::Url::parse("wss://api.elections.kalshi.com/trade-api/ws/v2")?.into_client_request()?;
-    
+    let mut req =
+        url::Url::parse("wss://api.elections.kalshi.com/trade-api/ws/v2")?.into_client_request()?;
+
     let h = req.headers_mut();
-    
-    // Fix 3: Explicitly parse into HeaderValue. 
+
+    // Fix 3: Explicitly parse into HeaderValue.
     // We use .try_into() or explicit parse to satisfy the compiler's type inference.
     h.insert("KALSHI-ACCESS-KEY", HeaderValue::from_str(&key_id)?);
     h.insert("KALSHI-ACCESS-SIGNATURE", HeaderValue::from_str(&sig)?);
@@ -44,16 +47,17 @@ pub async fn run(
 
     while let Some(Ok(msg)) = ws.next().await {
         if let Ok(text) = msg.to_text() {
-            if debug { println!("DEBUG: {}", text); }
+            if debug {
+                println!("DEBUG: {}", text);
+            }
             if let Ok(json) = serde_json::from_str::<Value>(text) {
-                
                 let ticker = match json["msg"]["market_ticker"].as_str() {
                     Some(t) => t.to_string(),
                     None => continue,
                 };
 
                 let msg_type = json["type"].as_str().unwrap_or("");
-                
+
                 if msg_type == "orderbook_delta" {
                     let seq = json["seq"].as_u64().unwrap_or(0);
                     let last = seq_map.entry(ticker.clone()).or_insert(0);
@@ -69,7 +73,7 @@ pub async fn run(
                     }
                     *last = seq;
                 }
-                
+
                 let _ = log_tx.send(json);
             }
         }

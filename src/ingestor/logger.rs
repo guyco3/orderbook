@@ -10,14 +10,18 @@ pub fn run(rx: Receiver<Value>, log_dir: PathBuf) {
     let mut writers = HashMap::new();
 
     while let Ok(log) = rx.recv() {
-        let ticker = log["ticker"].as_str()
+        let ticker = log["ticker"]
+            .as_str()
             .or_else(|| log["msg"]["market_ticker"].as_str())
             .unwrap_or("unknown");
 
         let writer = writers.entry(ticker.to_string()).or_insert_with(|| {
             let file_path = log_dir.join(format!("{}.jsonl", ticker));
-            let file = OpenOptions::new().create(true).append(true)
-                .open(file_path).unwrap();
+            let file = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(file_path)
+                .unwrap();
             BufWriter::with_capacity(64 * 1024, file)
         });
 
@@ -26,8 +30,8 @@ pub fn run(rx: Receiver<Value>, log_dir: PathBuf) {
         }
 
         if rx.is_empty() {
-            for w in writers.values_mut() { 
-                let _ = w.flush(); 
+            for w in writers.values_mut() {
+                let _ = w.flush();
             }
         }
     }

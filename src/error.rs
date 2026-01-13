@@ -1,5 +1,5 @@
-use thiserror::Error;
 use std::env::VarError;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum OrderbookError {
@@ -11,7 +11,7 @@ pub enum OrderbookError {
 
     #[error("Environment variable error: {0}")]
     EnvVar(#[from] VarError),
-    
+
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
 
