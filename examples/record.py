@@ -1,4 +1,4 @@
-import orderbook_rs as orderbook
+import orderbook
 import time
 import os
 from dotenv import load_dotenv
@@ -12,7 +12,13 @@ key_path = os.getenv("KALSHI_PRIVATE_KEY_PATH", "kalshi_key.pem")
 # 2. Setup the Rust Recorder
 # This spawns the high-speed Rust thread in the background
 rec = orderbook.PyRecorder(
-    tickers=["KXNBA-2026-01-12-LAL-GSW", "KXNBA-2026-01-12-BOS-MIA"],
+    tickers=[
+        "KXBTC-26JAN1617-B90750",
+        "KXBTC-26JAN1617-B98250",
+        "KXBTC-26JAN1617-B99250",
+        "KXBTC-26JAN1317-B99750",
+        "KXBTC-26JAN1317-B98750",
+        ],
     api_key=key_id,
     key_path=key_path,
     log_dir="./logs",
