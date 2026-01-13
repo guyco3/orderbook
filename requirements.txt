@@ -10,4 +10,4 @@ pandas>=2.0.0
 
 # --- Optional Utilities ---
 # If you want to load .env files directly in your Python analyzer scripts
-python-dotenv>=1.0.0
+python-dotenv>=1.0.0pytest

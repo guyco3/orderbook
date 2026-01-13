@@ -16,3 +16,12 @@ dependencies = [
 python-source = "python"
 # This tells maturin that 'orderbook_rs' is a submodule of 'orderbook'
 module-name = "orderbook.orderbook_rs"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools]
+package-dir = {"" = "python"}
+
+[tool.setuptools.packages.find]
+where = ["python"]

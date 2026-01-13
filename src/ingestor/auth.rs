@@ -50,3 +50,39 @@ impl KalshiSigner {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::File;
+    use std::io::Write;
+    use tempfile::tempdir;
+    // Fix: Import LineEnding directly from the rsa::pkcs1 module
+    use rsa::pkcs1::LineEnding;
+
+    #[test]
+    fn test_auth_header_generation() {
+        let dir = tempdir().unwrap();
+        let key_path = dir.path().join("test_key.pem");
+
+        // Generate a real temporary key for the test
+        let mut rng = rand::thread_rng();
+        let private_key = rsa::RsaPrivateKey::new(&mut rng, 2048).unwrap();
+
+        // Fix: Use the correct LineEnding reference
+        let pem =
+            rsa::pkcs1::EncodeRsaPrivateKey::to_pkcs1_pem(&private_key, LineEnding::LF).unwrap();
+
+        let mut file = File::create(&key_path).unwrap();
+        file.write_all(pem.as_bytes()).unwrap();
+
+        let signer = KalshiSigner::new(key_path.to_str().unwrap(), "test_id".to_string());
+        let (id, sig, ts) = signer.get_auth_headers();
+
+        assert_eq!(id, "test_id");
+        assert!(!sig.is_empty());
+
+        // Fix: Changed u140 to u64 (Standard 64-bit unsigned integer)
+        assert!(ts.parse::<u64>().is_ok());
+    }
+}

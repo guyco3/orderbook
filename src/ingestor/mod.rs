@@ -113,3 +113,24 @@ impl Recorder {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_recorder_builder() {
+        // Note: This will panic if kalshi_key.pem doesn't exist,
+        // which is good for catching environment issues.
+        let builder = Recorder::builder()
+            .with_tickers(vec!["BTC", "ETH"])
+            .with_log_dir("./test_logs")
+            .with_auth("key_id".into(), "kalshi_key.pem".into())
+            .debug(true);
+
+        let recorder = builder.build();
+        assert_eq!(recorder.tickers.len(), 2);
+        assert_eq!(recorder.log_dir, PathBuf::from("./test_logs"));
+        assert!(recorder.debug);
+    }
+}

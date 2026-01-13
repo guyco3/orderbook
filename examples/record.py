@@ -13,15 +13,12 @@ key_path = os.getenv("KALSHI_PRIVATE_KEY_PATH", "kalshi_key.pem")
 # This spawns the high-speed Rust thread in the background
 rec = orderbook.PyRecorder(
     tickers=[
-        "KXBTC-26JAN1617-B90750",
-        "KXBTC-26JAN1617-B98250",
-        "KXBTC-26JAN1617-B99250",
-        "KXBTC-26JAN1317-B99750",
-        "KXBTC-26JAN1317-B98750",
+        "KXBTC2026200-27JAN01-200000",
+        "KXFEDDECISION-26JAN-H0",
         ],
     api_key=key_id,
     key_path=key_path,
-    log_dir="./logs",
+    log_dir="./logs", # make sure you record the logs before, 
     debug=True
 )
 
