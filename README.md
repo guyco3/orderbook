@@ -1,103 +1,76 @@
-# Kalshi Orderbook Ingestor & Analyzer
+# Kalshi Orderbook SDK 🦀🐍
 
-A high-performance Rust toolset designed to stream real-time order book data from the Kalshi API and provide a professional-grade research environment using DuckDB.
+[![PyPI version](https://badge.fury.io/py/kalshi-orderbook.svg)](https://pypi.org/project/kalshi-orderbook/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🚀 Purpose
-This project solves the problem of "Hot Path" data ingestion versus "Cold Path" research. It allows you to maintain stable, low-latency WebSocket connections to hundreds of prediction markets simultaneously while providing a decoupled SQL-based API for backtesting and market microstructure analysis.
+A high-performance market data engine for Kalshi. It uses a **Rust core** for low-latency WebSocket ingestion and **DuckDB** for lightning-fast microstructure analysis.
 
-## 🏗️ Architecture
-The system is split into two distinct domains to ensure that heavy data analysis never interferes with live data collection.
+![Market Liquidity Heatmap](https://raw.githubusercontent.com/guyco3/orderbook/main/liquidity_heatmap.png)
 
-- **The Ingestor (Live):** An asynchronous, multi-threaded worker using tokio and JoinSet. It batches tickers into concurrent WebSocket streams to maximize throughput and minimize sequence gaps.
+## 🚀 Key Features
+- **Zero-Latency Ingestion:** Rust-based async recorder with vectorized SSD writes.
+- **DuckDB Integration:** Query gigabytes of JSONL logs directly with SQL—no database setup required.
+- **Python-Native:** Install via `pip` and get the performance of Rust with the ease of Python.
+- **Microstructure Suite:** Reconstruct L2 order books and visualize market "heatmaps" out of the box.
 
-- **The Logger (Persistence):** A dedicated thread with a 250,000-message buffer that writes raw JSONL files to disk. It uses BufWriter for vectorized SSD writes, optimized for M1/M2 Mac NVMe speeds.
-
-- **The Analysis API (Research):** A library powered by DuckDB. It treats your local log folder as a virtual database, allowing you to run SQL queries across gigabytes of JSON data without a separate database server.
-
-## 🛠️ Setup & Prerequisites
-
-### 1. System Dependencies
-You need DuckDB installed on your system for the analysis suite.
+## 📦 Installation
 
 ```bash
-brew install duckdb
+pip install kalshi-orderbook
 ```
 
-### 2. Rust Configuration (M1/M2 Macs)
-Since DuckDB is installed via Homebrew, you need to tell the Rust linker where to find it. Add this to your `~/.zshrc`:
+Note: Requires Python 3.7+ and a working Rust toolchain for manual builds.
+
+## 🛠️ Quick Start
+
+### 1. Record Live Data (CLI)
+
+You can use the built-in Rust ingestor to record specific tickers:
 
 ```bash
-export LIBRARY_PATH="$LIBRARY_PATH:/opt/homebrew/lib"
-```
-
-### 3. API Credentials
-Create a `.env` file in the project root:
-
-```env
-KALSHI_KEY_ID="your-api-key-id"
-KALSHI_PRIVATE_KEY_PATH="kalshi_key.pem"
-```
-
-## 🖥️ How to Run
-
-### Live Data Ingestion
-You can pipe a list of tickers directly into the binary or provide a file path.
-
-#### Using Pipes (Dynamic):
-```bash
-cat tickers.txt | cargo run --release -- --debug
-```
-
-#### Using a File:
-```bash
+# Provide a file with tickers
 cargo run --release -- --tickers-file tickers.txt
 ```
 
-### Data Analysis
-The analysis tool is built as a library. You can run the built-in integration tests to verify your logged data:
+### 2. High-Res Analysis (Python)
 
-```bash
-cargo test --test analysis_test -- --nocapture
+Use the SDK to analyze your logs with microsecond precision.
+
+```python
+import orderbook
+
+# Load logs from the local directory
+ana = orderbook.Analyzer(log_dir="./logs")
+ana.load_all()
+
+# Run a SQL query across your JSON data
+df = ana.query("SELECT * FROM KXBTC_26JAN_B90750 WHERE type = 'ticker'")
+print(df)
 ```
 
-## 📊 Use Cases & API Features
+## 📊 Market Microstructure
 
-### Market Microstructure Research
-Reconstruct the full Limit Order Book (L2) at any point in history.
+The SDK allows you to visualize the "hidden" state of the market, including liquidity walls and bot activity.
 
-```rust
-let analyzer = Analyzer::new()?;
-analyzer.load_logs("./logs")?;
-let book = analyzer.reconstruct_book("KXNFL-26JAN12-HOUPIT")?;
-```
+- **Velocity Analysis:** Detect micro-bursts of market activity.
+- **Heatmap Reconstruction:** Replay the order book to see where depth is concentrating.
 
-### Quant Strategy Backtesting
-Calculate spreads, VWAP, and volume imbalance across millions of rows in milliseconds.
+## 🏗️ Repository Structure
 
-```sql
--- Internal DuckDB View Example
-SELECT AVG(price) FROM ticker_data WHERE ticker = 'KXNBA...'
-```
-
-### Export for Python/R
-Clean and compress your raw JSON logs into Parquet files for use in Pandas or Polars.
-
-```rust
-analyzer.export_to_parquet("ticker_name", "output.parquet")?;
-```
-
-## 📁 Repository Structure
 ```
 .
-├── src/
-│   ├── main.rs          # Live Ingestor CLI
-│   ├── lib.rs           # Core Library Entry
-│   ├── ingestor/        # WebSocket & Auth Logic
-│   └── analysis/        # DuckDB & Math Logic
-├── tests/               # Integration & Research tests
-├── logs/                # Auto-generated JSONL data lake
-└── tickers.txt          # Default market list
+├── src/                # High-performance Rust Engine
+├── python/             # Python SDK Wrappers
+├── examples/           # Ready-to-run analysis scripts
+├── logs/               # Local JSONL data lake
+├── Cargo.toml          # Rust dependencies
+└── pyproject.toml      # Python metadata (Maturin)
 ```
 
+## 🤝 Contributing
+
+Contributions are welcome! Please see CONTRIBUTING.md for our development standards and how to submit pull requests.
+
 ## 📜 License
-This project is licensed under the [Apache License](LICENSE).
+
+Licensed under the MIT License.
