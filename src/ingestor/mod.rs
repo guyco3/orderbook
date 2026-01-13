@@ -90,10 +90,13 @@ impl Recorder {
 
         tokio::spawn(async move {
             let mut set = tokio::task::JoinSet::new();
-            for chunk in tickers.chunks(20) {
+            for chunk in tickers.chunks(100) {
                 let tx = log_tx.clone();
                 let sig = Arc::clone(&signer);
                 let batch = chunk.to_vec();
+
+                tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
                 set.spawn(async move {
                     // Map generic errors into our custom OrderbookError
                     publisher::run(tx, batch, sig, debug)
