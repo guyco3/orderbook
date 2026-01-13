@@ -67,9 +67,39 @@ The SDK allows you to visualize the "hidden" state of the market, including liqu
 └── pyproject.toml      # Python metadata (Maturin)
 ```
 
+## 🛠️ Local Development & Building
+
+If you want to modify the Rust engine or build the SDK from source, follow these steps:
+
+### Prerequisites
+- **Rust:** [Install via rustup](https://rustup.rs/)
+- **Python:** 3.7+
+- **Maturin:** `pip install maturin`
+
+### Build Instructions
+
+1. **Clone the repo:**
+   ```bash
+   git clone https://github.com/guyco3/orderbook
+   cd orderbook
+   ```
+
+2. **Setup virtual environment:**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
+
+3. **Compile and Install in-place:** This command compiles the Rust code and installs the package into your current venv.
+   ```bash
+   maturin develop --release
+   ```
+
+Now you can run the Python examples using your locally compiled Rust binary!
+
 ## 🤝 Contributing
 
-Contributions are welcome! Please see CONTRIBUTING.md for our development standards and how to submit pull requests.
+Contributions are welcome! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for our development standards and how to submit pull requests.
 
 ## 📜 License
 

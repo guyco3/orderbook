@@ -2,6 +2,8 @@
 
 First off, thank you for considering contributing! It's people like you who make this a great tool for the prediction market community.
 
+For detailed technical guidelines, please see [CONTRIBUTING_GUIDE.md](docs/CONTRIBUTING_GUIDE.md).
+
 ## 🛠️ Development Setup
 
 1. **Clone and Install:**
